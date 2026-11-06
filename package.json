@@ -8,12 +8,12 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"pnpm --prefix backend run start:dev\" \"pnpm --prefix frontend run dev\"",
-    "dev:backend": "pnpm --prefix backend run start:dev",
-    "dev:frontend": "pnpm --prefix frontend run dev",
-    "seed": "pnpm --prefix backend run seed",
-    "build": "pnpm --prefix backend run build && pnpm --prefix frontend run build",
-    "start": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"pnpm --prefix backend run start:prod\" \"pnpm --prefix frontend run start\""
+    "dev": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"pnpm --filter small-web-backend start:dev\" \"pnpm --filter small-web-frontend dev\"",
+    "dev:backend": "pnpm --filter small-web-backend start:dev",
+    "dev:frontend": "pnpm --filter small-web-frontend dev",
+    "seed": "pnpm --filter small-web-backend seed",
+    "build": "pnpm --filter small-web-backend build && pnpm --filter small-web-frontend build",
+    "start": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"pnpm --filter small-web-backend start:prod\" \"pnpm --filter small-web-frontend start\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
