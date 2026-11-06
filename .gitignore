@@ -9,6 +9,7 @@ out/
 
 # Database / Storage
 data/*.json
+backend/data/*.json
 !data/.gitkeep
 
 # Environment variables

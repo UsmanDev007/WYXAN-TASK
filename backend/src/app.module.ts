@@ -5,6 +5,7 @@ import { UsersModule } from './users/users.module';
 import { SitesModule } from './sites/sites.module';
 import { VisitsModule } from './visits/visits.module';
 import { SearchModule } from './search/search.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { SearchModule } from './search/search.module';
     SitesModule,
     VisitsModule,
     SearchModule,
+    SeedModule,
   ],
   controllers: [],
   providers: [],
