@@ -2,13 +2,14 @@
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Site } from '@/lib/types';
-import { Compass, FileQuestion, PlusCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { FileQuestion, PlusCircle, ArrowLeft, RefreshCw, WifiOff } from 'lucide-react';
 
 interface PageViewportProps {
   address: string;
   site: Site | null;
   isLoading: boolean;
   isNotFound: boolean;
+  isOffline?: boolean;
   preservedScroll: number;
   onNavigateLink: (targetAddress: string) => void;
   onOpenPublish: (prefillAddress?: string) => void;
@@ -21,6 +22,7 @@ export function PageViewport({
   site,
   isLoading,
   isNotFound,
+  isOffline,
   preservedScroll,
   onNavigateLink,
   onOpenPublish,
@@ -66,14 +68,12 @@ export function PageViewport({
       </script>
     `;
 
-    // Inject before </body> or append
     if (site.htmlContent.includes('</body>')) {
       return site.htmlContent.replace('</body>', `${bridgeScript}</body>`);
     }
     return site.htmlContent + bridgeScript;
   }, [site?.htmlContent]);
 
-  // Listen to messages from the sandboxed iframe
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
       if (!event.data || typeof event.data !== 'object') return;
@@ -89,7 +89,6 @@ export function PageViewport({
     return () => window.removeEventListener('message', handleMessage);
   }, [onNavigateLink]);
 
-  // Restore scroll position once iframe finishes loading
   const handleIframeLoad = () => {
     if (iframeRef.current?.contentWindow) {
       setTimeout(() => {
@@ -107,13 +106,52 @@ export function PageViewport({
       <div className="flex-1 flex flex-col items-center justify-center bg-card text-ink-soft select-none">
         <div className="flex items-center gap-3">
           <RefreshCw className="w-5 h-5 animate-spin text-active" />
-          <span className="font-mono text-sm">Asking the small web for <strong className="text-ink">{address}</strong>...</span>
+          <span className="font-mono text-sm">
+            Asking the small web for <strong className="text-ink">{address}</strong>...
+          </span>
         </div>
       </div>
     );
   }
 
-  // 2. Nowhere / 404 State
+  // 2. Offline / Backend unreachable state
+  if (isOffline) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-paper p-8 text-center select-none overflow-y-auto">
+        <div className="max-w-md w-full bg-card border border-line rounded-2xl p-8 shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-start-tint text-start flex items-center justify-center mx-auto mb-4">
+            <WifiOff className="w-6 h-6" />
+          </div>
+
+          <span className="font-mono text-xs uppercase tracking-widest text-ink-faint block mb-1">
+            Connection Notice
+          </span>
+          <h2 className="font-display text-2xl font-bold text-ink mb-2">
+            Backend API is Offline
+          </h2>
+          <p className="text-ink-soft text-sm mb-6 leading-relaxed">
+            Could not reach the NestJS API at <code className="bg-paper px-1.5 py-0.5 rounded text-ink">http://localhost:3001/api</code>.
+            Please start your backend server to browse the small web.
+          </p>
+
+          <div className="bg-paper p-3 rounded-lg text-left font-mono text-xs text-ink-soft mb-6 border border-line-soft">
+            <div className="text-ink font-semibold mb-1">Start backend in a terminal:</div>
+            <code>pnpm --prefix backend run start:dev</code>
+          </div>
+
+          <button
+            onClick={onRefresh}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-ink text-paper rounded-lg text-sm font-medium hover:bg-ink-soft transition shadow-sm"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry connection
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Nowhere / 404 State
   if (isNotFound || !site) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-paper p-8 text-center select-none overflow-y-auto">
@@ -156,7 +194,7 @@ export function PageViewport({
     );
   }
 
-  // 3. Render Sandboxed HTML
+  // 4. Render Sandboxed HTML
   return (
     <div className="flex-1 w-full h-full relative bg-white">
       <iframe
@@ -164,7 +202,6 @@ export function PageViewport({
         key={address}
         srcDoc={sandboxedHtml}
         title={site.title}
-        // Strict containment: allow scripts for intra-page interactions, but prevent escaping, top-navigation, modals, and same-origin cookie leaks
         sandbox="allow-scripts"
         onLoad={handleIframeLoad}
         className="w-full h-full border-0 select-text"

@@ -63,14 +63,16 @@ export default function BrowserApp() {
       setIsLoading(true);
 
       try {
-        const site = await fetchSite(address);
-        const isNotFound = !site;
+        const result = await fetchSite(address);
+        const site = result.site;
+        const isOffline = !!result.isOffline;
+        const isNotFound = !isOffline && !site;
 
         // Record in tab history stack (pruning forward entries)
-        pushAddress(address, site, isNotFound);
+        pushAddress(address, site, isNotFound, isOffline);
 
-        // Record persistent visit in database if user is selected
-        if (activeUser) {
+        // Record persistent visit in database if user is selected and not offline
+        if (activeUser && !isOffline) {
           const recorded = await recordVisit({
             userId: activeUser.handle,
             userName: activeUser.name,
@@ -83,7 +85,7 @@ export default function BrowserApp() {
           }
         }
       } catch (err) {
-        pushAddress(address, null, true);
+        pushAddress(address, null, true, true);
       } finally {
         setIsLoading(false);
       }
@@ -93,17 +95,16 @@ export default function BrowserApp() {
 
   // Initial landing page navigation
   useEffect(() => {
-    if (!currentItem && users.length > 0) {
+    if (!currentItem) {
       navigateTo('tidepool.zz', 'typed');
     }
-  }, [currentItem, users, navigateTo]);
+  }, [currentItem, navigateTo]);
 
   // Handle Back action
   const handleGoBack = () => {
     if (canGoBack) {
       goBack();
-      // Record back_forward visit
-      if (activeUser && currentItem) {
+      if (activeUser && currentItem && !currentItem.isOffline) {
         recordVisit({
           userId: activeUser.handle,
           userName: activeUser.name,
@@ -120,7 +121,7 @@ export default function BrowserApp() {
   const handleGoForward = () => {
     if (canGoForward) {
       goForward();
-      if (activeUser && currentItem) {
+      if (activeUser && currentItem && !currentItem.isOffline) {
         recordVisit({
           userId: activeUser.handle,
           userName: activeUser.name,
@@ -137,10 +138,11 @@ export default function BrowserApp() {
   const handleRefresh = () => {
     if (currentItem?.address) {
       navigateTo(currentItem.address, 'typed');
+    } else {
+      navigateTo('tidepool.zz', 'typed');
     }
   };
 
-  // Open Publish Modal (optionally pre-filled with an address from a 404 page)
   const handleOpenPublish = (prefill = '') => {
     setPublishPrefill(prefill);
     setIsPublishOpen(true);
@@ -172,6 +174,7 @@ export default function BrowserApp() {
         site={currentItem?.site || null}
         isLoading={isLoading}
         isNotFound={currentItem?.isNotFound || false}
+        isOffline={currentItem?.isOffline || false}
         preservedScroll={getPreservedScroll()}
         onNavigateLink={(linkAddr) => navigateTo(linkAddr, 'link')}
         onOpenPublish={handleOpenPublish}

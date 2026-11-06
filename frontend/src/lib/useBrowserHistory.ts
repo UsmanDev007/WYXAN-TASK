@@ -19,7 +19,7 @@ export function useBrowserHistory(initialAddress = 'tidepool.zz') {
 
   // Navigate to a new address (pruning forward stack if in middle)
   const pushAddress = useCallback(
-    (address: string, site: Site | null, isNotFound: boolean, currentScrollY = 0) => {
+    (address: string, site: Site | null, isNotFound: boolean, isOffline = false, currentScrollY = 0) => {
       setStack((prev) => {
         // Save current scroll position
         if (currentIndex >= 0) {
@@ -33,6 +33,7 @@ export function useBrowserHistory(initialAddress = 'tidepool.zz') {
           address: address.toLowerCase().trim(),
           site,
           isNotFound,
+          isOffline,
           scrollPosition: 0,
         };
 

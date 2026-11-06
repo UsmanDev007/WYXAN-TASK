@@ -36,5 +36,6 @@ export interface HistoryItem {
   address: string;
   site: Site | null;
   isNotFound: boolean;
+  isOffline?: boolean;
   scrollPosition: number;
 }
