@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #16212C;
+  --ink-soft: #41505E;
+  --ink-faint: #7A8894;
+  --paper: #F1F4F3;
+  --card: #FBFCFC;
+  --line: #D3DBD8;
+  --line-soft: #E3E8E6;
+  --start: #E08A34;
+  --active: #2E7BD6;
+  --done: #2F9160;
+  --alert: #C4453D;
+  --active-tint: #E7F0FB;
+  --done-tint: #E4F3EB;
+  --start-tint: #FBEFDF;
+  --alert-tint: #FAE8E7;
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100vh;
+}
