@@ -1,67 +1,209 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { fetchUsers, User } from '@/lib/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useBrowserHistory } from '@/lib/useBrowserHistory';
+import { fetchSite, fetchUsers, fetchVisits, recordVisit, User, Visit } from '@/lib/api';
+import { BrowserChrome } from '@/components/BrowserChrome';
+import { PageViewport } from '@/components/PageViewport';
+import { HistoryDrawer } from '@/components/HistoryDrawer';
+import { SearchModal } from '@/components/SearchModal';
+import { PublishModal } from '@/components/PublishModal';
 
-export default function Home() {
+export default function BrowserApp() {
   const [users, setUsers] = useState<User[]>([]);
   const [activeUser, setActiveUser] = useState<User | null>(null);
-  const [apiStatus, setApiStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
+  const [visits, setVisits] = useState<Visit[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Modals & Panels
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isPublishOpen, setIsPublishOpen] = useState(false);
+  const [publishPrefill, setPublishPrefill] = useState('');
+
+  // Linear tab history engine
+  const {
+    canGoBack,
+    canGoForward,
+    currentItem,
+    pushAddress,
+    goBack,
+    goForward,
+    getPreservedScroll,
+  } = useBrowserHistory('tidepool.zz');
+
+  // Load users & initial user visits
   useEffect(() => {
-    async function checkBackend() {
-      try {
-        const u = await fetchUsers();
-        setUsers(u);
-        if (u.length > 0) setActiveUser(u[0]);
-        setApiStatus('connected');
-      } catch (e) {
-        setApiStatus('disconnected');
+    async function initUsers() {
+      const u = await fetchUsers();
+      setUsers(u);
+      if (u.length > 0) {
+        const initialUser = u[0]; // Alice Walker
+        setActiveUser(initialUser);
+        const v = await fetchVisits(initialUser.handle);
+        setVisits(v);
       }
     }
-    checkBackend();
+    initUsers();
   }, []);
 
-  return (
-    <main className="flex flex-col h-screen w-screen bg-paper text-ink overflow-hidden font-body">
-      {/* Header bar / Initial shell */}
-      <header className="h-14 border-b border-line bg-card flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-xs font-semibold uppercase tracking-wider text-ink-faint">
-            The Small Web
-          </span>
-          <span className="text-line">/</span>
-          <span className="text-xs font-mono text-ink-soft">Browser Chrome</span>
-        </div>
-        <div className="flex items-center gap-3 text-xs">
-          <span className="text-ink-faint">Backend API:</span>
-          <span
-            className={`px-2 py-0.5 rounded-full font-mono font-medium ${
-              apiStatus === 'connected'
-                ? 'bg-done-tint text-done'
-                : apiStatus === 'checking'
-                ? 'bg-start-tint text-start'
-                : 'bg-alert-tint text-alert'
-            }`}
-          >
-            {apiStatus}
-          </span>
-        </div>
-      </header>
+  // When activeUser changes, reload their history
+  useEffect(() => {
+    if (activeUser) {
+      fetchVisits(activeUser.handle).then(setVisits);
+    }
+  }, [activeUser]);
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-        <h1 className="font-display text-3xl font-bold mb-2">The Small Web Browser</h1>
-        <p className="text-ink-soft max-w-lg mb-6">
-          The browser that reads a few hundred one-page websites living in a database.
-        </p>
-        <div className="p-4 border border-line rounded-xl bg-card max-w-md w-full text-left font-mono text-xs text-ink-soft">
-          <div className="font-semibold text-ink mb-2">System Initialized:</div>
-          <div>• Frontend: Next.js + Tailwind CSS</div>
-          <div>• Backend: NestJS on port 3001</div>
-          <div>• Database: MongoDB (with high-fidelity fallback)</div>
-        </div>
-      </div>
+  // Primary navigation function
+  const navigateTo = useCallback(
+    async (targetAddress: string, source: Visit['source'] = 'typed') => {
+      const address = targetAddress.toLowerCase().trim();
+      if (!address) return;
+
+      setIsLoading(true);
+
+      try {
+        const site = await fetchSite(address);
+        const isNotFound = !site;
+
+        // Record in tab history stack (pruning forward entries)
+        pushAddress(address, site, isNotFound);
+
+        // Record persistent visit in database if user is selected
+        if (activeUser) {
+          const recorded = await recordVisit({
+            userId: activeUser.handle,
+            userName: activeUser.name,
+            address,
+            source,
+          });
+
+          if (recorded) {
+            setVisits((prev) => [recorded, ...prev]);
+          }
+        }
+      } catch (err) {
+        pushAddress(address, null, true);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [activeUser, pushAddress],
+  );
+
+  // Initial landing page navigation
+  useEffect(() => {
+    if (!currentItem && users.length > 0) {
+      navigateTo('tidepool.zz', 'typed');
+    }
+  }, [currentItem, users, navigateTo]);
+
+  // Handle Back action
+  const handleGoBack = () => {
+    if (canGoBack) {
+      goBack();
+      // Record back_forward visit
+      if (activeUser && currentItem) {
+        recordVisit({
+          userId: activeUser.handle,
+          userName: activeUser.name,
+          address: currentItem.address,
+          source: 'back_forward',
+        }).then((recorded) => {
+          if (recorded) setVisits((prev) => [recorded, ...prev]);
+        });
+      }
+    }
+  };
+
+  // Handle Forward action
+  const handleGoForward = () => {
+    if (canGoForward) {
+      goForward();
+      if (activeUser && currentItem) {
+        recordVisit({
+          userId: activeUser.handle,
+          userName: activeUser.name,
+          address: currentItem.address,
+          source: 'back_forward',
+        }).then((recorded) => {
+          if (recorded) setVisits((prev) => [recorded, ...prev]);
+        });
+      }
+    }
+  };
+
+  // Handle Refresh action
+  const handleRefresh = () => {
+    if (currentItem?.address) {
+      navigateTo(currentItem.address, 'typed');
+    }
+  };
+
+  // Open Publish Modal (optionally pre-filled with an address from a 404 page)
+  const handleOpenPublish = (prefill = '') => {
+    setPublishPrefill(prefill);
+    setIsPublishOpen(true);
+  };
+
+  return (
+    <main className="flex flex-col h-screen w-screen bg-paper text-ink overflow-hidden font-body select-none">
+      {/* 1. Browser Chrome (Toolbar) */}
+      <BrowserChrome
+        currentAddress={currentItem?.address || ''}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        isLoading={isLoading}
+        users={users}
+        activeUser={activeUser}
+        onNavigate={(addr) => navigateTo(addr, 'typed')}
+        onGoBack={handleGoBack}
+        onGoForward={handleGoForward}
+        onRefresh={handleRefresh}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenHistory={() => setIsHistoryOpen(true)}
+        onOpenPublish={() => handleOpenPublish('')}
+        onSelectUser={setActiveUser}
+      />
+
+      {/* 2. Main Page Viewport */}
+      <PageViewport
+        address={currentItem?.address || ''}
+        site={currentItem?.site || null}
+        isLoading={isLoading}
+        isNotFound={currentItem?.isNotFound || false}
+        preservedScroll={getPreservedScroll()}
+        onNavigateLink={(linkAddr) => navigateTo(linkAddr, 'link')}
+        onOpenPublish={handleOpenPublish}
+        onGoBack={handleGoBack}
+        onRefresh={handleRefresh}
+      />
+
+      {/* 3. History Drawer */}
+      <HistoryDrawer
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        visits={visits}
+        activeUser={activeUser}
+        onJumpToVisit={(addr) => navigateTo(addr, 'history')}
+      />
+
+      {/* 4. Full-Text Search Modal */}
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onNavigateResult={(addr) => navigateTo(addr, 'search')}
+      />
+
+      {/* 5. Publish Modal */}
+      <PublishModal
+        isOpen={isPublishOpen}
+        prefillAddress={publishPrefill}
+        users={users}
+        activeUser={activeUser}
+        onClose={() => setIsPublishOpen(false)}
+        onPublished={(newAddr) => navigateTo(newAddr, 'typed')}
+      />
     </main>
   );
 }
