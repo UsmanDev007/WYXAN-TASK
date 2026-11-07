@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { X, Clock, ArrowUpRight, Globe, Compass, ExternalLink } from 'lucide-react';
 import { Visit, User } from '@/lib/types';
 
 interface HistoryDrawerProps {
@@ -23,101 +22,98 @@ export function HistoryDrawer({
 
   const formatTime = (isoString: string) => {
     try {
-      const date = new Date(isoString);
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const d = new Date(isoString);
+      return d.toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
     } catch {
       return '';
     }
   };
 
-  const getSourceBadge = (source: Visit['source']) => {
-    switch (source) {
-      case 'typed':
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-paper border border-line text-ink-soft">typed</span>;
-      case 'link':
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-active-tint text-active">link</span>;
-      case 'back_forward':
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-start-tint text-start">retrace</span>;
-      case 'search':
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-done-tint text-done">search</span>;
-      case 'history':
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-line-soft text-ink-soft">jump</span>;
-      default:
-        return null;
-    }
+  const sourceLabel: Record<string, string> = {
+    typed: 'typed',
+    link: 'link',
+    back_forward: 'retrace',
+    search: 'search',
+    history: 'jump',
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-ink/20 backdrop-blur-xs transition-opacity">
-      <div className="w-full max-w-md bg-card h-full shadow-2xl border-l border-line flex flex-col animate-in slide-in-from-right duration-200">
-        {/* Header */}
-        <div className="p-4 border-b border-line flex items-center justify-between bg-paper/50">
-          <div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-ink" />
-              <h2 className="font-display font-bold text-base text-ink">Browsing History</h2>
-            </div>
-            <p className="text-xs text-ink-faint mt-0.5">
-              Everywhere <strong className="text-ink">{activeUser?.name || 'this persona'}</strong> has been
-            </p>
+    <>
+      <div className="drawer-backdrop" onClick={onClose} />
+      <aside className="drawer">
+        <div className="drawer-header">
+          <div className="drawer-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Browsing History
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-ink-soft hover:text-ink hover:bg-paper transition"
-          >
-            <X className="w-5 h-5" />
+          <button className="drawer-close" onClick={onClose} title="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
           </button>
         </div>
 
-        {/* Visit List */}
-        <div className="flex-1 overflow-y-auto divide-y divide-line-soft">
+        {activeUser && (
+          <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--line-soft)', background: 'var(--paper)' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--ink-faint)' }}>
+              Everywhere <strong style={{ color: 'var(--ink)' }}>{activeUser.name}</strong> has been
+            </span>
+          </div>
+        )}
+
+        <div className="drawer-body">
           {visits.length === 0 ? (
-            <div className="p-8 text-center text-ink-faint">
-              <Clock className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No visits recorded yet for this user.</p>
-              <p className="text-xs mt-1">Start typing addresses or following links to leave a trail.</p>
+            <div className="empty-state">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }}>
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <p>No visits recorded yet.</p>
+              <p style={{ marginTop: 4, fontSize: 11 }}>Start typing addresses or following links to leave a trail.</p>
             </div>
           ) : (
-            visits.map((visit) => {
-              const isNowhere = visit.siteTitle === '[Nowhere]';
-              return (
-                <div
-                  key={visit.id || visit.timestamp}
-                  onClick={() => {
-                    onJumpToVisit(visit.address);
-                    onClose();
-                  }}
-                  className="p-3.5 hover:bg-paper cursor-pointer transition group flex items-start justify-between gap-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`font-medium text-sm truncate ${isNowhere ? 'text-alert' : 'text-ink'}`}>
-                        {visit.siteTitle}
-                      </span>
-                      {getSourceBadge(visit.source)}
-                    </div>
-                    <div className="flex items-center gap-1.5 font-mono text-xs text-ink-soft group-hover:text-active transition">
-                      <Globe className="w-3 h-3 text-ink-faint" />
-                      <span className="truncate">{visit.address}</span>
-                    </div>
+            visits.map((visit) => (
+              <button
+                key={`${visit.id || visit.timestamp}-${visit.address}`}
+                className="visit-item"
+                onClick={() => { onJumpToVisit(visit.address); onClose(); }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="visit-addr" style={{ color: visit.siteTitle === '[Nowhere]' ? 'var(--alert)' : 'var(--ink)' }}>
+                    {visit.siteTitle || visit.address}
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="font-mono text-[11px] text-ink-faint block">
-                      {formatTime(visit.timestamp)}
-                    </span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-ink-faint opacity-0 group-hover:opacity-100 transition inline-block mt-1 text-active" />
+                  <div className="visit-meta">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="2" y1="12" x2="22" y2="12"/>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{visit.address}</span>
                   </div>
                 </div>
-              );
-            })
+                <div style={{ flexShrink: 0, textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                  <span className={`source-badge ${visit.source}`}>
+                    {sourceLabel[visit.source] || visit.source}
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-faint)' }}>
+                    {formatTime(visit.timestamp)}
+                  </span>
+                </div>
+              </button>
+            ))
           )}
         </div>
 
-        {/* Footer info */}
-        <div className="p-3 border-t border-line bg-paper text-[11px] font-mono text-ink-faint text-center">
-          {visits.length} recorded visits · Click any visit to retrace
+        <div style={{ padding: '10px 20px', borderTop: '1px solid var(--line-soft)', background: 'var(--paper)', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-faint)', textAlign: 'center' }}>
+          {visits.length} recorded visit{visits.length !== 1 ? 's' : ''} · Click any to retrace
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 }

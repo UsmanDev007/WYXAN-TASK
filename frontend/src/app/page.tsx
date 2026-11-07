@@ -32,27 +32,39 @@ export default function BrowserApp() {
     getPreservedScroll,
   } = useBrowserHistory('tidepool.zz');
 
-  // Load users & initial user visits
+  // Load users on mount
   useEffect(() => {
     async function initUsers() {
       const u = await fetchUsers();
       setUsers(u);
       if (u.length > 0) {
-        const initialUser = u[0]; // Alice Walker
-        setActiveUser(initialUser);
-        const v = await fetchVisits(initialUser.handle);
+        const initial = u[0];
+        setActiveUser(initial);
+        const v = await fetchVisits(initial.handle);
         setVisits(v);
       }
     }
     initUsers();
   }, []);
 
-  // When activeUser changes, reload their history
+  // Reload history when user switches
   useEffect(() => {
     if (activeUser) {
       fetchVisits(activeUser.handle).then(setVisits);
     }
   }, [activeUser]);
+
+  // Keyboard shortcuts: Ctrl+K = search, Ctrl+L = focus address (future)
+  useEffect(() => {
+    function handleGlobalKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    }
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
 
   // Primary navigation function
   const navigateTo = useCallback(
@@ -61,17 +73,14 @@ export default function BrowserApp() {
       if (!address) return;
 
       setIsLoading(true);
-
       try {
         const result = await fetchSite(address);
         const site = result.site;
         const isOffline = !!result.isOffline;
         const isNotFound = !isOffline && !site;
 
-        // Record in tab history stack (pruning forward entries)
         pushAddress(address, site, isNotFound, isOffline);
 
-        // Record persistent visit in database if user is selected and not offline
         if (activeUser && !isOffline) {
           const recorded = await recordVisit({
             userId: activeUser.handle,
@@ -79,13 +88,12 @@ export default function BrowserApp() {
             address,
             source,
           });
-
           if (recorded) {
             setVisits((prev) => [recorded, ...prev]);
           }
         }
-      } catch (err) {
-        pushAddress(address, null, true, true);
+      } catch {
+        pushAddress(targetAddress, null, true, true);
       } finally {
         setIsLoading(false);
       }
@@ -93,14 +101,13 @@ export default function BrowserApp() {
     [activeUser, pushAddress],
   );
 
-  // Initial landing page navigation
+  // Initial navigation to tidepool.zz
   useEffect(() => {
     if (!currentItem) {
       navigateTo('tidepool.zz', 'typed');
     }
   }, [currentItem, navigateTo]);
 
-  // Handle Back action
   const handleGoBack = () => {
     if (canGoBack) {
       goBack();
@@ -110,14 +117,11 @@ export default function BrowserApp() {
           userName: activeUser.name,
           address: currentItem.address,
           source: 'back_forward',
-        }).then((recorded) => {
-          if (recorded) setVisits((prev) => [recorded, ...prev]);
-        });
+        }).then((r) => { if (r) setVisits((prev) => [r, ...prev]); });
       }
     }
   };
 
-  // Handle Forward action
   const handleGoForward = () => {
     if (canGoForward) {
       goForward();
@@ -127,14 +131,11 @@ export default function BrowserApp() {
           userName: activeUser.name,
           address: currentItem.address,
           source: 'back_forward',
-        }).then((recorded) => {
-          if (recorded) setVisits((prev) => [recorded, ...prev]);
-        });
+        }).then((r) => { if (r) setVisits((prev) => [r, ...prev]); });
       }
     }
   };
 
-  // Handle Refresh action
   const handleRefresh = () => {
     if (currentItem?.address) {
       navigateTo(currentItem.address, 'typed');
@@ -148,9 +149,21 @@ export default function BrowserApp() {
     setIsPublishOpen(true);
   };
 
+  // Status bar info
+  const statusDotClass = isLoading ? 'status-dot loading' : currentItem?.isOffline ? 'status-dot error' : currentItem?.isNotFound ? 'status-dot error' : 'status-dot';
+  const statusText = isLoading
+    ? `Connecting to ${currentItem?.address || '…'}`
+    : currentItem?.isOffline
+    ? 'Backend offline'
+    : currentItem?.isNotFound
+    ? `No site at ${currentItem?.address}`
+    : currentItem?.site
+    ? `${currentItem.site.title} · by ${currentItem.site.authorName}`
+    : 'The Small Web';
+
   return (
-    <main className="flex flex-col h-screen w-screen bg-paper text-ink overflow-hidden font-body select-none">
-      {/* 1. Browser Chrome (Toolbar) */}
+    <div className="browser-root">
+      {/* 1. Browser Chrome */}
       <BrowserChrome
         currentAddress={currentItem?.address || ''}
         canGoBack={canGoBack}
@@ -168,21 +181,39 @@ export default function BrowserApp() {
         onSelectUser={setActiveUser}
       />
 
-      {/* 2. Main Page Viewport */}
-      <PageViewport
-        address={currentItem?.address || ''}
-        site={currentItem?.site || null}
-        isLoading={isLoading}
-        isNotFound={currentItem?.isNotFound || false}
-        isOffline={currentItem?.isOffline || false}
-        preservedScroll={getPreservedScroll()}
-        onNavigateLink={(linkAddr) => navigateTo(linkAddr, 'link')}
-        onOpenPublish={handleOpenPublish}
-        onGoBack={handleGoBack}
-        onRefresh={handleRefresh}
-      />
+      {/* 2. Page Viewport */}
+      <div className="browser-viewport">
+        <PageViewport
+          address={currentItem?.address || ''}
+          site={currentItem?.site || null}
+          isLoading={isLoading}
+          isNotFound={currentItem?.isNotFound || false}
+          isOffline={currentItem?.isOffline || false}
+          preservedScroll={getPreservedScroll()}
+          onNavigateLink={(addr) => navigateTo(addr, 'link')}
+          onOpenPublish={handleOpenPublish}
+          onGoBack={handleGoBack}
+          onRefresh={handleRefresh}
+        />
+      </div>
 
-      {/* 3. History Drawer */}
+      {/* 3. Status bar */}
+      <div className="status-bar">
+        <div className={statusDotClass} />
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {statusText}
+        </span>
+        {activeUser && (
+          <>
+            <span style={{ marginLeft: 'auto', opacity: 0.5 }}>·</span>
+            <span style={{ marginLeft: 4 }}>
+              Browsing as <strong style={{ color: 'var(--chrome-text)', fontWeight: 600 }}>{activeUser.name}</strong>
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* 4. History Drawer */}
       <HistoryDrawer
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
@@ -191,14 +222,14 @@ export default function BrowserApp() {
         onJumpToVisit={(addr) => navigateTo(addr, 'history')}
       />
 
-      {/* 4. Full-Text Search Modal */}
+      {/* 5. Search Modal */}
       <SearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onNavigateResult={(addr) => navigateTo(addr, 'search')}
       />
 
-      {/* 5. Publish Modal */}
+      {/* 6. Publish Modal */}
       <PublishModal
         isOpen={isPublishOpen}
         prefillAddress={publishPrefill}
@@ -207,6 +238,6 @@ export default function BrowserApp() {
         onClose={() => setIsPublishOpen(false)}
         onPublished={(newAddr) => navigateTo(newAddr, 'typed')}
       />
-    </main>
+    </div>
   );
 }

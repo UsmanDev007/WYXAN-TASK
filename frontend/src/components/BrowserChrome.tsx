@@ -1,17 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  RotateCw,
-  Search,
-  History,
-  PlusCircle,
-  Globe,
-  User as UserIcon,
-  ChevronDown,
-} from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from '@/lib/types';
 
 interface BrowserChromeProps {
@@ -49,150 +38,154 @@ export function BrowserChrome({
 }: BrowserChromeProps) {
   const [inputVal, setInputVal] = useState(currentAddress);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setInputVal(currentAddress);
   }, [currentAddress]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowUserDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputVal.trim()) {
-      onNavigate(inputVal.trim());
-    }
+    if (inputVal.trim()) onNavigate(inputVal.trim());
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
   };
 
   return (
-    <header className="h-14 border-b border-line bg-card flex items-center justify-between px-3 gap-2 select-none z-10 relative">
-      {/* 1. Navigation Controls */}
-      <div className="flex items-center gap-1">
+    <header className="browser-chrome">
+      {/* Nav Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
         <button
+          className="nav-btn"
           onClick={onGoBack}
           disabled={!canGoBack}
-          title="Back"
-          className="p-1.5 rounded-lg text-ink hover:bg-paper disabled:opacity-30 disabled:hover:bg-transparent transition"
+          title="Go back"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
         </button>
         <button
+          className="nav-btn"
           onClick={onGoForward}
           disabled={!canGoForward}
-          title="Forward"
-          className="p-1.5 rounded-lg text-ink hover:bg-paper disabled:opacity-30 disabled:hover:bg-transparent transition"
+          title="Go forward"
         >
-          <ArrowRight className="w-4 h-4" />
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
         </button>
         <button
+          className={`nav-btn${isLoading ? ' spinning' : ''}`}
           onClick={onRefresh}
-          title="Reload page"
-          className={`p-1.5 rounded-lg text-ink hover:bg-paper transition ${
-            isLoading ? 'animate-spin text-active' : ''
-          }`}
+          title="Reload"
         >
-          <RotateCw className="w-4 h-4" />
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
         </button>
       </div>
 
-      {/* 2. Address Bar */}
-      <form onSubmit={handleSubmit} className="flex-1 max-w-2xl mx-2">
-        <div className="relative flex items-center">
-          <div className="absolute left-3 text-ink-faint pointer-events-none">
-            <Globe className="w-3.5 h-3.5" />
+      {/* Address Bar */}
+      <form onSubmit={handleSubmit} style={{ flex: 1, maxWidth: 640, margin: '0 8px' }}>
+        <div className="address-bar-wrap">
+          <div className="address-globe">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
           </div>
           <input
+            className="address-input"
             type="text"
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Type an address (e.g. tidepool.zz)..."
-            className="w-full bg-paper border border-line-soft rounded-lg pl-8 pr-16 py-1.5 font-mono text-xs text-ink placeholder-ink-faint focus:outline-none focus:border-active focus:bg-white transition"
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
           />
-          <button
-            type="submit"
-            className="absolute right-1.5 px-2 py-0.5 bg-card border border-line rounded text-[11px] font-mono text-ink-soft hover:text-ink hover:border-ink-faint transition"
-          >
-            Go
-          </button>
+          <button type="submit" className="address-go-btn">Go</button>
         </div>
       </form>
 
-      {/* 3. Action Buttons & User Switcher */}
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={onOpenSearch}
-          title="Search the web (by content)"
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono text-ink-soft hover:text-ink hover:bg-paper border border-transparent hover:border-line transition"
-        >
-          <Search className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Search</span>
+      {/* Action Buttons */}
+      <div className="chrome-actions">
+        <button className="action-btn" onClick={onOpenSearch} title="Full-text search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span>Search</span>
         </button>
 
-        <button
-          onClick={onOpenHistory}
-          title="Retrace History"
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono text-ink-soft hover:text-ink hover:bg-paper border border-transparent hover:border-line transition"
-        >
-          <History className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">History</span>
+        <button className="action-btn" onClick={onOpenHistory} title="View history">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>History</span>
         </button>
 
-        <button
-          onClick={onOpenPublish}
-          title="Publish a site"
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono bg-ink text-paper hover:bg-ink-soft transition shadow-sm"
-        >
-          <PlusCircle className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Publish</span>
+        <button className="action-btn publish" onClick={onOpenPublish} title="Publish a site">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+          <span>Publish</span>
         </button>
 
-        <div className="h-4 w-px bg-line mx-1" />
+        <div className="chrome-sep" />
 
-        {/* User Identity Picker */}
-        <div className="relative">
+        {/* User Picker */}
+        <div className="user-picker" ref={dropdownRef}>
           <button
+            className="user-picker-btn"
             onClick={() => setShowUserDropdown(!showUserDropdown)}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-line bg-paper hover:bg-white transition text-xs font-mono text-ink"
           >
-            <UserIcon className="w-3.5 h-3.5 text-active" />
-            <span className="max-w-[80px] sm:max-w-[110px] truncate">
-              {activeUser ? activeUser.name : 'Browsing as'}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--active)', flexShrink: 0 }}>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span className="user-picker-name">
+              {activeUser ? activeUser.name : 'Select user'}
             </span>
-            <ChevronDown className="w-3 h-3 text-ink-faint" />
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
           </button>
 
           {showUserDropdown && (
-            <div className="absolute right-0 mt-2 w-56 bg-card border border-line rounded-xl shadow-lg py-1.5 z-50">
-              <div className="px-3 py-1.5 border-b border-line-soft">
-                <p className="text-[10px] font-mono uppercase tracking-wider text-ink-faint">
-                  Browsing Identity
-                </p>
-                <p className="text-xs text-ink-soft">Visits and publishing belong to:</p>
+            <div className="user-dropdown">
+              <div className="user-dropdown-header">
+                <div className="user-dropdown-label">Browsing Identity</div>
+                <div className="user-dropdown-sub">Visits & publishing belong to:</div>
               </div>
-              <div className="max-h-60 overflow-y-auto py-1">
-                {users.map((u) => (
-                  <button
-                    key={u.handle}
-                    onClick={() => {
-                      onSelectUser(u);
-                      setShowUserDropdown(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-paper transition ${
-                      activeUser?.handle === u.handle
-                        ? 'font-semibold text-active bg-active-tint/50'
-                        : 'text-ink'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-medium">{u.name}</div>
-                      <div className="font-mono text-[11px] text-ink-faint">@{u.handle}</div>
-                    </div>
-                    {activeUser?.handle === u.handle && (
-                      <span className="w-2 h-2 rounded-full bg-active" />
-                    )}
-                  </button>
-                ))}
-              </div>
+              {users.map((u) => (
+                <button
+                  key={u.handle}
+                  className={`user-dropdown-item${activeUser?.handle === u.handle ? ' active' : ''}`}
+                  onClick={() => { onSelectUser(u); setShowUserDropdown(false); }}
+                >
+                  <div>
+                    <div>{u.name}</div>
+                    <div className="user-handle">@{u.handle}</div>
+                  </div>
+                  {activeUser?.handle === u.handle && <div className="user-dot" />}
+                </button>
+              ))}
             </div>
           )}
         </div>

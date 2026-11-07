@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ height: '100%' }}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -21,7 +21,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body bg-paper text-ink antialiased select-none">{children}</body>
+      <body style={{ height: '100%', margin: 0, padding: 0, overflow: 'hidden' }}>
+        {children}
+      </body>
     </html>
   );
 }

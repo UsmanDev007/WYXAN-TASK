@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search as SearchIcon, X, Globe, ArrowRight, CornerDownLeft } from 'lucide-react';
 import { searchSites, SearchResult } from '@/lib/api';
 
 interface SearchModalProps {
@@ -26,118 +25,114 @@ export function SearchModal({ isOpen, onClose, onNavigateResult }: SearchModalPr
   }, [isOpen]);
 
   useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-
+    if (!query.trim()) { setResults([]); return; }
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await searchSites(query);
-        setResults(res);
-      } catch (err) {
+        setResults(await searchSites(query));
+      } catch {
         setResults([]);
       } finally {
         setIsSearching(false);
       }
-    }, 200);
-
+    }, 220);
     return () => clearTimeout(timer);
   }, [query]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+  };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-ink/30 backdrop-blur-xs">
-      <div className="w-full max-w-2xl bg-card border border-line rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[75vh] animate-in fade-in zoom-in-95 duration-150">
-        {/* Search Input Bar */}
-        <div className="p-4 border-b border-line flex items-center gap-3 bg-white">
-          <SearchIcon className="w-5 h-5 text-ink-faint shrink-0" />
+    <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown}>
+      <div className="modal">
+        {/* Search input */}
+        <div className="search-input-row">
+          <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
           <input
             ref={inputRef}
+            className="search-input"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Search words written across all sites..."
-            className="flex-1 font-body text-base text-ink placeholder-ink-faint focus:outline-none bg-transparent"
+            spellCheck={false}
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="p-1 text-ink-faint hover:text-ink transition"
+              style={{ background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', padding: '2px 4px' }}
+              title="Clear"
             >
-              <X className="w-4 h-4" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
             </button>
           )}
           <button
             onClick={onClose}
-            className="px-2 py-1 bg-paper border border-line rounded text-xs font-mono text-ink-soft hover:bg-line-soft transition"
+            style={{ padding: '2px 8px', background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 5, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-soft)', cursor: 'pointer' }}
           >
             ESC
           </button>
         </div>
 
-        {/* Results Stream */}
-        <div className="flex-1 overflow-y-auto divide-y divide-line-soft p-2">
+        {/* Results */}
+        <div className="search-results">
           {isSearching ? (
-            <div className="p-8 text-center font-mono text-sm text-ink-faint">
-              Searching pages across the small web...
+            <div className="search-empty">
+              <div className="loading-row" style={{ justifyContent: 'center' }}>
+                <div className="spinner" />
+                <span>Searching the small web…</span>
+              </div>
             </div>
           ) : query.trim() && results.length === 0 ? (
-            <div className="p-8 text-center text-ink-soft">
-              <p className="font-display font-medium text-base mb-1">No pages found containing "{query}"</p>
-              <p className="text-xs text-ink-faint">Try searching for other words like "hydrophone", "lichen", "concrete", or "radio".</p>
+            <div className="search-empty">
+              <p style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>
+                No pages found for "{query}"
+              </p>
+              <p style={{ fontSize: 11 }}>
+                Try words like "hydrophone", "lichen", "concrete", or "radio".
+              </p>
             </div>
           ) : !query.trim() ? (
-            <div className="p-6 text-center text-ink-faint">
-              <p className="font-mono text-xs uppercase tracking-wider mb-2">Full-Text Web Search</p>
-              <p className="text-sm text-ink-soft max-w-sm mx-auto">
+            <div className="search-empty">
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                Full-Text Web Search
+              </p>
+              <p style={{ fontSize: 13, color: 'var(--ink-soft)', maxWidth: 340, margin: '0 auto' }}>
                 Queries search directly into the HTML body and written prose of every site in the database.
               </p>
             </div>
           ) : (
             results.map((item) => (
-              <div
+              <button
                 key={item.address}
-                onClick={() => {
-                  onNavigateResult(item.address);
-                  onClose();
-                }}
-                className="p-3.5 hover:bg-paper rounded-xl cursor-pointer transition group"
+                className="search-result-item"
+                onClick={() => { onNavigateResult(item.address); onClose(); }}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-display font-bold text-sm text-ink group-hover:text-active transition flex items-center gap-2">
-                    {item.title}
-                    <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition text-active" />
-                  </h3>
-                  <div className="flex items-center gap-1 font-mono text-xs text-ink-faint">
-                    <Globe className="w-3 h-3" />
-                    <span>{item.address}</span>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <div className="search-result-title">{item.title}</div>
+                  <div className="search-result-addr">{item.address}</div>
                 </div>
-
-                <p className="text-xs text-ink-soft leading-relaxed font-body line-clamp-2 bg-paper/70 p-2 rounded-lg border border-line-soft group-hover:border-line transition">
-                  {item.excerpt}
-                </p>
-
-                <div className="flex items-center gap-3 mt-2 text-[11px] font-mono text-ink-faint">
-                  <span>Author: {item.authorName}</span>
-                  <span>·</span>
-                  <span>Match Score: {item.matchScore}</span>
+                <div className="search-result-excerpt">{item.excerpt}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-faint)', marginTop: 4 }}>
+                  Author: {item.authorName} · Score: {item.matchScore}
                 </div>
-              </div>
+              </button>
             ))
           )}
         </div>
 
-        {/* Footer */}
         {results.length > 0 && (
-          <div className="p-2.5 border-t border-line bg-paper/50 flex items-center justify-between text-xs font-mono text-ink-faint px-4">
+          <div style={{ padding: '8px 16px', borderTop: '1px solid var(--line-soft)', background: 'var(--paper)', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-faint)', display: 'flex', justifyContent: 'space-between' }}>
             <span>{results.length} site(s) found</span>
-            <span className="flex items-center gap-1">
-              Press <CornerDownLeft className="w-3 h-3" /> to navigate
-            </span>
+            <span>Click to navigate</span>
           </div>
         )}
       </div>

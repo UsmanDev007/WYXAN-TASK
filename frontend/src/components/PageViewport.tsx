@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Site } from '@/lib/types';
-import { FileQuestion, PlusCircle, ArrowLeft, RefreshCw, WifiOff } from 'lucide-react';
 
 interface PageViewportProps {
   address: string;
@@ -30,16 +29,14 @@ export function PageViewport({
   onRefresh,
 }: PageViewportProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [currentScrollY, setCurrentScrollY] = useState(0);
 
-  // Securely prepare HTML content with safe link interception & scroll restoration
+  // Inject link-interception bridge into untrusted HTML
   const sandboxedHtml = useMemo(() => {
     if (!site?.htmlContent) return '';
 
     const bridgeScript = `
       <script>
         (function() {
-          // Intercept all link clicks inside untrusted HTML
           document.addEventListener('click', function(e) {
             var anchor = e.target.closest('a');
             if (anchor) {
@@ -47,25 +44,21 @@ export function PageViewport({
               if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
                 e.preventDefault();
                 e.stopPropagation();
-                var cleanAddress = href.replace(/^https?:\\/\\//i, '').replace(/^\\/+/i, '');
-                window.parent.postMessage({ type: 'NAVIGATE', address: cleanAddress }, '*');
+                var clean = href.replace(/^https?:\\/\\//i, '').replace(/^\\/+/i, '').split('?')[0].split('#')[0];
+                window.parent.postMessage({ type: 'NAVIGATE', address: clean }, '*');
               }
             }
           }, true);
-
-          // Report scroll position to parent
           window.addEventListener('scroll', function() {
             window.parent.postMessage({ type: 'SCROLL', scrollY: window.scrollY }, '*');
           }, { passive: true });
-
-          // Handle restore scroll command
-          window.addEventListener('message', function(event) {
-            if (event.data && event.data.type === 'RESTORE_SCROLL') {
-              window.scrollTo(0, event.data.scrollY || 0);
+          window.addEventListener('message', function(evt) {
+            if (evt.data && evt.data.type === 'RESTORE_SCROLL') {
+              window.scrollTo(0, evt.data.scrollY || 0);
             }
           });
         })();
-      </script>
+      <\/script>
     `;
 
     if (site.htmlContent.includes('</body>')) {
@@ -77,14 +70,10 @@ export function PageViewport({
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
       if (!event.data || typeof event.data !== 'object') return;
-
       if (event.data.type === 'NAVIGATE' && typeof event.data.address === 'string') {
         onNavigateLink(event.data.address);
-      } else if (event.data.type === 'SCROLL' && typeof event.data.scrollY === 'number') {
-        setCurrentScrollY(event.data.scrollY);
       }
     }
-
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, [onNavigateLink]);
@@ -100,92 +89,95 @@ export function PageViewport({
     }
   };
 
-  // 1. Loading State
+  // 1. Loading
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-card text-ink-soft select-none">
-        <div className="flex items-center gap-3">
-          <RefreshCw className="w-5 h-5 animate-spin text-active" />
-          <span className="font-mono text-sm">
-            Asking the small web for <strong className="text-ink">{address}</strong>...
+      <div className="state-screen">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="spinner" />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--ink-soft)' }}>
+            Connecting to <strong style={{ color: 'var(--ink)' }}>{address}</strong>…
           </span>
         </div>
       </div>
     );
   }
 
-  // 2. Offline / Backend unreachable state
+  // 2. Offline
   if (isOffline) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-paper p-8 text-center select-none overflow-y-auto">
-        <div className="max-w-md w-full bg-card border border-line rounded-2xl p-8 shadow-sm">
-          <div className="w-12 h-12 rounded-xl bg-start-tint text-start flex items-center justify-center mx-auto mb-4">
-            <WifiOff className="w-6 h-6" />
+      <div className="state-screen">
+        <div className="state-card">
+          <div className="state-icon orange">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="1" y1="1" x2="23" y2="23"/>
+              <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+              <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+              <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+              <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+              <line x1="12" y1="20" x2="12.01" y2="20"/>
+            </svg>
           </div>
-
-          <span className="font-mono text-xs uppercase tracking-widest text-ink-faint block mb-1">
-            Connection Notice
-          </span>
-          <h2 className="font-display text-2xl font-bold text-ink mb-2">
-            Backend API is Offline
-          </h2>
-          <p className="text-ink-soft text-sm mb-6 leading-relaxed">
-            Could not reach the NestJS API at <code className="bg-paper px-1.5 py-0.5 rounded text-ink">http://localhost:3001/api</code>.
-            Please start your backend server to browse the small web.
+          <div className="state-eyebrow">Connection Notice</div>
+          <h2 className="state-title">Backend API is Offline</h2>
+          <p className="state-body">
+            Could not reach the NestJS API at{' '}
+            <code style={{ background: 'var(--paper)', padding: '1px 6px', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+              http://localhost:3001/api
+            </code>
+            . Please start the backend server to browse the small web.
           </p>
-
-          <div className="bg-paper p-3 rounded-lg text-left font-mono text-xs text-ink-soft mb-6 border border-line-soft">
-            <div className="text-ink font-semibold mb-1">Start backend in a terminal:</div>
-            <code>pnpm --prefix backend run start:dev</code>
+          <div className="state-code">
+            <strong>Start backend in a new terminal:</strong>
+            <code>cd backend && pnpm run start:dev</code>
           </div>
-
-          <button
-            onClick={onRefresh}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-ink text-paper rounded-lg text-sm font-medium hover:bg-ink-soft transition shadow-sm"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Retry connection
-          </button>
+          <div className="state-actions">
+            <button className="btn-primary" onClick={onRefresh}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              Retry connection
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // 3. Nowhere / 404 State
+  // 3. 404 / Nowhere
   if (isNotFound || !site) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-paper p-8 text-center select-none overflow-y-auto">
-        <div className="max-w-md w-full bg-card border border-line rounded-2xl p-8 shadow-sm">
-          <div className="w-12 h-12 rounded-xl bg-alert-tint text-alert flex items-center justify-center mx-auto mb-4">
-            <FileQuestion className="w-6 h-6" />
+      <div className="state-screen">
+        <div className="state-card">
+          <div className="state-icon red">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="11" x2="12" y2="17"/>
+              <line x1="9" y1="11" x2="15" y2="11"/>
+            </svg>
           </div>
-
-          <span className="font-mono text-xs uppercase tracking-widest text-ink-faint block mb-1">
-            Error 404 · Nowhere
-          </span>
-          <h2 className="font-display text-2xl font-bold text-ink mb-2">
-            No site lives at this address
-          </h2>
-          <p className="font-mono text-sm text-alert bg-alert-tint py-1 px-3 rounded-md inline-block mb-4">
-            {address}
-          </p>
-          <p className="text-ink-soft text-sm mb-6 leading-relaxed">
+          <div className="state-eyebrow">Error 404 · Nowhere</div>
+          <h2 className="state-title">No site lives at this address</h2>
+          {address && (
+            <div className="state-addr">{address}</div>
+          )}
+          <p className="state-body">
             You followed a link or typed an address that has never existed, or may have dissolved into the ether.
           </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={() => onOpenPublish(address)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-ink text-paper rounded-lg text-sm font-medium hover:bg-ink-soft transition shadow-sm"
-            >
-              <PlusCircle className="w-4 h-4" />
+          <div className="state-actions">
+            <button className="btn-primary" onClick={() => onOpenPublish(address)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
               Publish here
             </button>
-            <button
-              onClick={onGoBack}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 border border-line bg-card text-ink rounded-lg text-sm font-medium hover:bg-paper transition"
-            >
-              <ArrowLeft className="w-4 h-4" />
+            <button className="btn-secondary" onClick={onGoBack}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
               Go back
             </button>
           </div>
@@ -194,9 +186,9 @@ export function PageViewport({
     );
   }
 
-  // 4. Render Sandboxed HTML
+  // 4. Sandboxed HTML content
   return (
-    <div className="flex-1 w-full h-full relative bg-white">
+    <div className="iframe-container">
       <iframe
         ref={iframeRef}
         key={address}
@@ -204,7 +196,7 @@ export function PageViewport({
         title={site.title}
         sandbox="allow-scripts"
         onLoad={handleIframeLoad}
-        className="w-full h-full border-0 select-text"
+        className="browser-iframe"
       />
     </div>
   );
