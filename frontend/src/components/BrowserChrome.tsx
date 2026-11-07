@@ -39,10 +39,28 @@ export function BrowserChrome({
   const [inputVal, setInputVal] = useState(currentAddress);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setInputVal(currentAddress);
   }, [currentAddress]);
+
+  // Global keyboard shortcuts: Ctrl+L to focus address bar
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'l' || e.key === 'L')) {
+        e.preventDefault();
+        addressInputRef.current?.focus();
+        addressInputRef.current?.select();
+      } else if (e.altKey && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        addressInputRef.current?.focus();
+        addressInputRef.current?.select();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -111,27 +129,30 @@ export function BrowserChrome({
             </svg>
           </div>
           <input
+            ref={addressInputRef}
             className="address-input"
             type="text"
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
+            onClick={(e) => (e.target as HTMLInputElement).select()}
             onKeyDown={handleKeyDown}
             placeholder="Type an address (e.g. tidepool.zz)..."
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
           />
-          <button type="submit" className="address-go-btn">Go</button>
+          <button type="submit" className="address-go-btn" title="Navigate (Enter)">Go</button>
         </div>
       </form>
 
       {/* Action Buttons */}
       <div className="chrome-actions">
-        <button className="action-btn" onClick={onOpenSearch} title="Full-text search">
+        <button className="action-btn" onClick={onOpenSearch} title="Full-text search (Ctrl+K)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <span>Search</span>
+          <span style={{ fontSize: 9, opacity: 0.5, border: '1px solid rgba(255,255,255,0.2)', padding: '0 3px', borderRadius: 3 }}>⌘K</span>
         </button>
 
         <button className="action-btn" onClick={onOpenHistory} title="View history">

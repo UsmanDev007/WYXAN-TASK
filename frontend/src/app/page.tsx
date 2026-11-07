@@ -29,6 +29,7 @@ export default function BrowserApp() {
     pushAddress,
     goBack,
     goForward,
+    recordCurrentScroll,
     getPreservedScroll,
   } = useBrowserHistory('tidepool.zz');
 
@@ -194,6 +195,7 @@ export default function BrowserApp() {
           onOpenPublish={handleOpenPublish}
           onGoBack={handleGoBack}
           onRefresh={handleRefresh}
+          onScrollChange={recordCurrentScroll}
         />
       </div>
 

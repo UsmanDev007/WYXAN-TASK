@@ -14,6 +14,7 @@ interface PageViewportProps {
   onOpenPublish: (prefillAddress?: string) => void;
   onGoBack: () => void;
   onRefresh: () => void;
+  onScrollChange?: (scrollY: number) => void;
 }
 
 export function PageViewport({
@@ -27,6 +28,7 @@ export function PageViewport({
   onOpenPublish,
   onGoBack,
   onRefresh,
+  onScrollChange,
 }: PageViewportProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -54,7 +56,7 @@ export function PageViewport({
           }, { passive: true });
           window.addEventListener('message', function(evt) {
             if (evt.data && evt.data.type === 'RESTORE_SCROLL') {
-              window.scrollTo(0, evt.data.scrollY || 0);
+              window.scrollTo({ top: evt.data.scrollY || 0, behavior: 'instant' });
             }
           });
         })();
@@ -72,20 +74,23 @@ export function PageViewport({
       if (!event.data || typeof event.data !== 'object') return;
       if (event.data.type === 'NAVIGATE' && typeof event.data.address === 'string') {
         onNavigateLink(event.data.address);
+      } else if (event.data.type === 'SCROLL' && typeof event.data.scrollY === 'number') {
+        if (onScrollChange) {
+          onScrollChange(event.data.scrollY);
+        }
       }
     }
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [onNavigateLink]);
+  }, [onNavigateLink, onScrollChange]);
 
   const handleIframeLoad = () => {
     if (iframeRef.current?.contentWindow) {
+      const win = iframeRef.current.contentWindow;
+      win.postMessage({ type: 'RESTORE_SCROLL', scrollY: preservedScroll }, '*');
       setTimeout(() => {
-        iframeRef.current?.contentWindow?.postMessage(
-          { type: 'RESTORE_SCROLL', scrollY: preservedScroll },
-          '*',
-        );
-      }, 50);
+        win.postMessage({ type: 'RESTORE_SCROLL', scrollY: preservedScroll }, '*');
+      }, 80);
     }
   };
 
