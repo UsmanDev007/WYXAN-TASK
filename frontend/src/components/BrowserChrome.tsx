@@ -96,7 +96,7 @@ export function BrowserChrome({
   const avatarBg = (activeUser && AVATAR_COLORS[activeUser.handle]) || '#1a73e8';
 
   return (
-    <header style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+    <header style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, width: '100%' }}>
       {/* 1. Chrome Tab Strip */}
       <div className="chrome-tab-strip">
         <div className="chrome-tab">
@@ -133,38 +133,40 @@ export function BrowserChrome({
       {/* 2. Chrome Navigation Toolbar */}
       <div className="chrome-toolbar">
         {/* Nav Controls */}
-        <button
-          className="chrome-btn"
-          onClick={onGoBack}
-          disabled={!canGoBack}
-          title="Click to go back"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
+        <div className="chrome-nav-group">
+          <button
+            className="chrome-btn"
+            onClick={onGoBack}
+            disabled={!canGoBack}
+            title="Click to go back"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
 
-        <button
-          className="chrome-btn"
-          onClick={onGoForward}
-          disabled={!canGoForward}
-          title="Click to go forward"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
+          <button
+            className="chrome-btn"
+            onClick={onGoForward}
+            disabled={!canGoForward}
+            title="Click to go forward"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
 
-        <button
-          className={`chrome-btn${isLoading ? ' spin' : ''}`}
-          onClick={onRefresh}
-          title="Reload this page"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="23 4 23 10 17 10"/>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-          </svg>
-        </button>
+          <button
+            className={`chrome-btn${isLoading ? ' spin' : ''}`}
+            onClick={onRefresh}
+            title="Reload this page"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+          </button>
+        </div>
 
         {/* 3. Google Chrome Omnibox */}
         <form onSubmit={handleSubmit} className="chrome-omnibox-form">
@@ -183,7 +185,7 @@ export function BrowserChrome({
               onChange={(e) => setInputVal(e.target.value)}
               onClick={(e) => (e.target as HTMLInputElement).select()}
               onKeyDown={handleKeyDown}
-              placeholder="Search Google or type a Small Web address (e.g. tidepool.zz)..."
+              placeholder="Search or type address (e.g. tidepool.zz)..."
               spellCheck={false}
               autoCapitalize="off"
               autoCorrect="off"
@@ -194,27 +196,27 @@ export function BrowserChrome({
           </div>
         </form>
 
-        {/* 4. Action Buttons (Chrome Extensions / Features style) */}
+        {/* 4. Action Buttons (Responsive: Icons on mobile, icon+label on desktop) */}
         <div className="chrome-actions-strip">
           <button className="chrome-pill-btn" onClick={onOpenSearch} title="Search the Small Web (Ctrl+K)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <span>Search</span>
+            <span className="btn-label">Search</span>
           </button>
 
           <button className="chrome-pill-btn" onClick={onOpenHistory} title="Browsing History (Ctrl+H)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 16 14"/>
             </svg>
-            <span>History</span>
+            <span className="btn-label">History</span>
           </button>
 
           <button className="chrome-pill-btn primary" onClick={onOpenPublish} title="Publish a new site">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
-            <span>Publish</span>
+            <span className="btn-label">Publish</span>
           </button>
 
           {/* 5. Google Account Profile Avatar */}

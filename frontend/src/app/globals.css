@@ -35,6 +35,7 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  width: 100%;
   overflow: hidden;
   font-family: var(--font-chrome);
   color: var(--chrome-text);
@@ -47,6 +48,7 @@ html, body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
   background: #ffffff;
@@ -57,11 +59,16 @@ html, body {
   display: flex;
   align-items: flex-end;
   background: var(--chrome-tabbar-bg);
-  padding: 8px 8px 0 8px;
+  padding: 6px 8px 0 8px;
   gap: 4px;
   user-select: none;
   flex-shrink: 0;
   border-bottom: 1px solid var(--chrome-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.chrome-tab-strip::-webkit-scrollbar {
+  display: none;
 }
 
 .chrome-tab {
@@ -70,8 +77,8 @@ html, body {
   gap: 8px;
   height: 34px;
   max-width: 240px;
-  min-width: 140px;
-  padding: 0 12px;
+  min-width: 100px;
+  padding: 0 10px;
   background: var(--chrome-tab-active);
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
@@ -80,11 +87,12 @@ html, body {
   position: relative;
   cursor: pointer;
   box-shadow: 0 0 4px rgba(0,0,0,0.06);
+  flex-shrink: 1;
 }
 
 .chrome-tab-favicon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
   color: var(--google-blue);
   display: flex;
@@ -98,6 +106,7 @@ html, body {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 500;
+  min-width: 0;
 }
 
 .chrome-tab-close {
@@ -131,6 +140,7 @@ html, body {
   justify-content: center;
   cursor: pointer;
   margin-bottom: 3px;
+  flex-shrink: 0;
   transition: background 0.15s;
 }
 .chrome-new-tab-btn:hover {
@@ -142,11 +152,19 @@ html, body {
 .chrome-toolbar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   background: var(--chrome-toolbar-bg);
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--chrome-border);
   user-select: none;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.chrome-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   flex-shrink: 0;
 }
 
@@ -182,7 +200,7 @@ html, body {
 /* 3. Chrome Omnibox (Address Bar) */
 .chrome-omnibox-form {
   flex: 1;
-  max-width: 780px;
+  min-width: 0;
   margin: 0 4px;
 }
 
@@ -193,8 +211,8 @@ html, body {
   border: 1px solid transparent;
   border-radius: 20px;
   height: 34px;
-  padding: 0 10px 0 12px;
-  gap: 8px;
+  padding: 0 8px 0 12px;
+  gap: 6px;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 .chrome-omnibox:focus-within {
@@ -212,6 +230,7 @@ html, body {
 
 .omnibox-input {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   background: transparent;
@@ -222,6 +241,7 @@ html, body {
 }
 .omnibox-input::placeholder {
   color: #80868b;
+  text-overflow: ellipsis;
 }
 
 .omnibox-go-btn {
@@ -231,8 +251,9 @@ html, body {
   color: var(--chrome-text-secondary);
   font-size: 11px;
   font-weight: 500;
-  padding: 2px 10px;
+  padding: 2px 8px;
   cursor: pointer;
+  flex-shrink: 0;
   transition: background 0.15s, color 0.15s;
 }
 .omnibox-go-btn:hover {
@@ -245,12 +266,13 @@ html, body {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .chrome-pill-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   height: 32px;
   padding: 0 10px;
@@ -262,6 +284,7 @@ html, body {
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
 }
 .chrome-pill-btn:hover {
   background: rgba(0,0,0,0.04);
@@ -281,7 +304,7 @@ html, body {
 /* Google Account Avatar */
 .google-profile-wrap {
   position: relative;
-  margin-left: 4px;
+  flex-shrink: 0;
 }
 
 .google-avatar-btn {
@@ -298,6 +321,7 @@ html, body {
   font-size: 13px;
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.1s;
+  flex-shrink: 0;
 }
 .google-avatar-btn:hover {
   box-shadow: 0 2px 6px rgba(0,0,0,0.25);
@@ -310,6 +334,7 @@ html, body {
   right: 0;
   top: calc(100% + 8px);
   width: 290px;
+  max-width: calc(100vw - 20px);
   background: #ffffff;
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.18), 0 0 1px rgba(0,0,0,0.12);
@@ -354,6 +379,8 @@ html, body {
 
 .google-account-list {
   padding: 8px;
+  max-height: 240px;
+  overflow-y: auto;
 }
 .google-account-item {
   width: 100%;
@@ -406,6 +433,8 @@ html, body {
 /* ===== VIEWPORT CONTAINER ===== */
 .chrome-viewport {
   flex: 1;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -426,19 +455,33 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 3px 12px;
+  padding: 4px 12px;
   background: #f8f9fa;
   border-top: 1px solid var(--chrome-border);
   font-size: 11px;
   color: var(--chrome-text-secondary);
   user-select: none;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.chrome-status-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chrome-status-user {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 .chrome-status-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--google-green);
+  flex-shrink: 0;
 }
 .chrome-status-dot.loading {
   background: var(--google-yellow);
@@ -455,7 +498,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px;
+  padding: 20px;
   background: #f8f9fa;
   overflow-y: auto;
 }
@@ -465,29 +508,29 @@ html, body {
   background: #ffffff;
   border: 1px solid var(--chrome-border);
   border-radius: 16px;
-  padding: 40px;
+  padding: 28px 24px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .chrome-error-icon {
-  width: 56px;
-  height: 56px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   background: var(--google-blue-tint);
   color: var(--google-blue);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .chrome-error-icon.alert {
   background: var(--google-red-tint);
   color: var(--google-red);
 }
 .chrome-error-title {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--chrome-text);
-  margin: 0 0 12px;
+  margin: 0 0 10px;
 }
 .chrome-error-address {
   display: inline-block;
@@ -497,24 +540,25 @@ html, body {
   color: var(--google-blue);
   padding: 4px 10px;
   border-radius: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
+  word-break: break-all;
 }
 .chrome-error-desc {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--chrome-text-secondary);
   line-height: 1.6;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 .chrome-error-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 .google-btn-primary {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 20px;
+  padding: 8px 18px;
   border-radius: 20px;
   background: var(--google-blue);
   color: #ffffff;
@@ -532,7 +576,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 20px;
+  padding: 8px 18px;
   border-radius: 20px;
   background: #ffffff;
   color: var(--google-blue);
@@ -553,9 +597,9 @@ html, body {
   background: rgba(32,33,36,0.5);
   z-index: 999;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding-top: 80px;
+  padding: 16px;
   animation: fadeIn 0.12s ease;
 }
 @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
@@ -569,7 +613,8 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: calc(100vh - 120px);
+  max-height: 90vh;
+  max-height: 90dvh;
   animation: popIn 0.15s ease-out;
 }
 @keyframes popIn {
@@ -581,8 +626,9 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--chrome-border);
+  flex-shrink: 0;
 }
 .google-dialog-title {
   font-size: 16px;
@@ -593,6 +639,19 @@ html, body {
   gap: 8px;
 }
 
+/* Publish form responsive grid */
+.publish-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--chrome-border);
+  background: #ffffff;
+  flex-shrink: 0;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
 /* History Drawer (Google Chrome Side Panel style) */
 .chrome-side-panel {
   position: fixed;
@@ -600,7 +659,7 @@ html, body {
   top: 0;
   bottom: 0;
   width: 380px;
-  max-width: 90vw;
+  max-width: 100vw;
   background: #ffffff;
   border-left: 1px solid var(--chrome-border);
   box-shadow: -4px 0 20px rgba(0,0,0,0.12);
@@ -627,3 +686,77 @@ html, body {
 .source-chip.search { background: var(--google-yellow-tint); color: #b06000; }
 .source-chip.retrace { background: #f1f3f4; color: var(--chrome-text-secondary); }
 .source-chip.jump { background: #f1f3f4; color: var(--chrome-text-secondary); }
+
+/* ========================================================
+   RESPONSIVE MEDIA QUERIES (Mobile & Tablet Breakpoints)
+   ======================================================== */
+
+/* Tablet & Smaller (< 768px) */
+@media (max-width: 768px) {
+  .chrome-pill-btn {
+    padding: 0 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    justify-content: center;
+  }
+  .chrome-pill-btn .btn-label {
+    display: none;
+  }
+  .chrome-status-user {
+    display: none;
+  }
+  .chrome-tab {
+    max-width: 160px;
+    min-width: 80px;
+  }
+}
+
+/* Mobile Devices (< 480px) */
+@media (max-width: 480px) {
+  .chrome-toolbar {
+    padding: 4px 6px;
+    gap: 3px;
+  }
+  .chrome-btn {
+    width: 28px;
+    height: 28px;
+  }
+  .chrome-pill-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+  }
+  .google-avatar-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  .chrome-omnibox {
+    height: 30px;
+    padding: 0 6px 0 10px;
+    gap: 4px;
+  }
+  .omnibox-input {
+    font-size: 12px;
+  }
+  .omnibox-go-btn {
+    padding: 1px 6px;
+    font-size: 10px;
+  }
+  .chrome-tab {
+    height: 30px;
+    font-size: 11px;
+    padding: 0 8px;
+  }
+  .chrome-error-card {
+    padding: 20px 16px;
+  }
+  .chrome-error-title {
+    font-size: 18px;
+  }
+  .publish-meta-grid {
+    grid-template-columns: 1fr;
+    max-height: 200px;
+  }
+}

@@ -63,10 +63,21 @@ export function PageViewport({
       <\/script>
     `;
 
-    if (site.htmlContent.includes('</body>')) {
-      return site.htmlContent.replace('</body>', `${bridgeScript}</body>`);
+    let processedHtml = site.htmlContent;
+    // Ensure mobile viewport meta tag exists so site content scales responsively
+    if (!processedHtml.includes('name="viewport"') && !processedHtml.includes("name='viewport'")) {
+      const viewportTag = '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
+      if (processedHtml.includes('<head>')) {
+        processedHtml = processedHtml.replace('<head>', `<head>${viewportTag}`);
+      } else if (processedHtml.includes('<html>')) {
+        processedHtml = processedHtml.replace('<html>', `<html><head>${viewportTag}</head>`);
+      }
     }
-    return site.htmlContent + bridgeScript;
+
+    if (processedHtml.includes('</body>')) {
+      return processedHtml.replace('</body>', `${bridgeScript}</body>`);
+    }
+    return processedHtml + bridgeScript;
   }, [site?.htmlContent]);
 
   useEffect(() => {

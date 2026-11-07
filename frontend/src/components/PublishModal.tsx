@@ -92,7 +92,7 @@ export function PublishModal({
       style={{ alignItems: 'center', paddingTop: 0 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="google-dialog" style={{ maxWidth: 740, height: '82vh' }}>
+      <div className="google-dialog" style={{ maxWidth: 740, height: '85vh', maxHeight: '90dvh' }}>
         {/* Header */}
         <div className="google-dialog-header">
           <div className="google-dialog-title">
@@ -111,9 +111,9 @@ export function PublishModal({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           {/* Metadata Fields */}
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #dadce0', background: '#ffffff', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <div className="publish-meta-grid">
             {errorMsg && (
-              <div style={{ gridColumn: 'span 3', padding: '8px 12px', background: '#fce8e6', color: '#c5221f', borderRadius: 8, fontSize: 12 }}>
+              <div style={{ gridColumn: '1 / -1', padding: '8px 12px', background: '#fce8e6', color: '#c5221f', borderRadius: 8, fontSize: 12 }}>
                 {errorMsg}
               </div>
             )}

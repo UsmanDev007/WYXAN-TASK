@@ -211,11 +211,11 @@ export default function BrowserApp() {
       {/* 3. Chrome Status Bar */}
       <footer className="chrome-status-bar">
         <div className={statusDotClass} />
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span className="chrome-status-text">
           {statusText}
         </span>
         {activeUser && (
-          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span className="chrome-status-user">
             <span>Signed in as</span>
             <strong style={{ color: '#202124' }}>{activeUser.name}</strong>
           </span>
