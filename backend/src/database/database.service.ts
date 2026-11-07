@@ -58,8 +58,8 @@ export class DatabaseService implements OnModuleInit {
 
     try {
       await mongoose.connect(mongoUri, {
-        serverSelectionTimeoutMS: 2000,
-        connectTimeoutMS: 2000,
+        serverSelectionTimeoutMS: 8000,
+        connectTimeoutMS: 8000,
       });
 
       this.siteModel = mongoose.models.Site || mongoose.model('Site', SiteSchema);
@@ -68,11 +68,22 @@ export class DatabaseService implements OnModuleInit {
 
       this.isMongoConnected = true;
       this.logger.log('✓ Successfully connected to live MongoDB database via Mongoose.');
+
+      // Sync any local fallback sites (including newly published ones) directly to MongoDB Atlas
+      for (const [addr, site] of this.memorySites.entries()) {
+        try {
+          await this.siteModel.findOneAndUpdate(
+            { address: addr },
+            { $set: site },
+            { upsert: true },
+          );
+        } catch {}
+      }
     } catch (err: any) {
       this.isMongoConnected = false;
-      this.logger.warn(`⚠ Local MongoDB not reachable on port 27017 (${err.message}).`);
+      this.logger.warn(`⚠ Live MongoDB Atlas not reached (${err.message}).`);
       this.logger.log('✓ Active storage mode: High-fidelity document store (data/smallweb.json).');
-      this.logger.log('  (To connect real MongoDB, start the mongod service or set MONGODB_URI in .env)');
+      this.logger.log('  All sites and visits are saved locally and will sync when MongoDB is reachable.');
     }
   }
 
