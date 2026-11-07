@@ -55,12 +55,15 @@ export default function BrowserApp() {
     }
   }, [activeUser]);
 
-  // Keyboard shortcuts: Ctrl+K = search, Ctrl+L = focus address (future)
+  // Keyboard shortcut Ctrl+K to open search
   useEffect(() => {
     function handleGlobalKey(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
         setIsSearchOpen(true);
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        setIsHistoryOpen((prev) => !prev);
       }
     }
     window.addEventListener('keydown', handleGlobalKey);
@@ -151,20 +154,25 @@ export default function BrowserApp() {
   };
 
   // Status bar info
-  const statusDotClass = isLoading ? 'status-dot loading' : currentItem?.isOffline ? 'status-dot error' : currentItem?.isNotFound ? 'status-dot error' : 'status-dot';
+  const statusDotClass = isLoading
+    ? 'chrome-status-dot loading'
+    : currentItem?.isOffline || currentItem?.isNotFound
+    ? 'chrome-status-dot error'
+    : 'chrome-status-dot';
+
   const statusText = isLoading
-    ? `Connecting to ${currentItem?.address || '…'}`
+    ? `Waiting for ${currentItem?.address || 'site'}...`
     : currentItem?.isOffline
-    ? 'Backend offline'
+    ? 'API Offline'
     : currentItem?.isNotFound
-    ? `No site at ${currentItem?.address}`
+    ? `Not found: ${currentItem?.address}`
     : currentItem?.site
-    ? `${currentItem.site.title} · by ${currentItem.site.authorName}`
-    : 'The Small Web';
+    ? `${currentItem.site.title} — Published by ${currentItem.site.authorName}`
+    : 'Google Chrome Small Web';
 
   return (
-    <div className="browser-root">
-      {/* 1. Browser Chrome */}
+    <div className="chrome-window">
+      {/* 1. Chrome Tab Strip & Navigation Toolbar */}
       <BrowserChrome
         currentAddress={currentItem?.address || ''}
         canGoBack={canGoBack}
@@ -172,6 +180,7 @@ export default function BrowserApp() {
         isLoading={isLoading}
         users={users}
         activeUser={activeUser}
+        siteTitle={currentItem?.site?.title}
         onNavigate={(addr) => navigateTo(addr, 'typed')}
         onGoBack={handleGoBack}
         onGoForward={handleGoForward}
@@ -182,8 +191,8 @@ export default function BrowserApp() {
         onSelectUser={setActiveUser}
       />
 
-      {/* 2. Page Viewport */}
-      <div className="browser-viewport">
+      {/* 2. Sandboxed Page Viewport */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
         <PageViewport
           address={currentItem?.address || ''}
           site={currentItem?.site || null}
@@ -199,23 +208,21 @@ export default function BrowserApp() {
         />
       </div>
 
-      {/* 3. Status bar */}
-      <div className="status-bar">
+      {/* 3. Chrome Status Bar */}
+      <footer className="chrome-status-bar">
         <div className={statusDotClass} />
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {statusText}
         </span>
         {activeUser && (
-          <>
-            <span style={{ marginLeft: 'auto', opacity: 0.5 }}>·</span>
-            <span style={{ marginLeft: 4 }}>
-              Browsing as <strong style={{ color: 'var(--chrome-text)', fontWeight: 600 }}>{activeUser.name}</strong>
-            </span>
-          </>
+          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>Signed in as</span>
+            <strong style={{ color: '#202124' }}>{activeUser.name}</strong>
+          </span>
         )}
-      </div>
+      </footer>
 
-      {/* 4. History Drawer */}
+      {/* 4. History Drawer (Chrome Side Panel) */}
       <HistoryDrawer
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
@@ -224,7 +231,7 @@ export default function BrowserApp() {
         onJumpToVisit={(addr) => navigateTo(addr, 'history')}
       />
 
-      {/* 5. Search Modal */}
+      {/* 5. Google Search Modal */}
       <SearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}

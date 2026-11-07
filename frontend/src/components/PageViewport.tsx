@@ -94,27 +94,27 @@ export function PageViewport({
     }
   };
 
-  // 1. Loading
+  // 1. Google Chrome Loading State
   if (isLoading) {
     return (
-      <div className="state-screen">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="spinner" />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--ink-soft)' }}>
-            Connecting to <strong style={{ color: 'var(--ink)' }}>{address}</strong>…
-          </span>
+      <div className="chrome-error-screen">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div style={{ width: 36, height: 36, border: '3px solid #e8eaed', borderTopColor: '#1a73e8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <div style={{ fontSize: 14, color: '#5f6368' }}>
+            Connecting to <strong style={{ color: '#202124' }}>{address}</strong>...
+          </div>
         </div>
       </div>
     );
   }
 
-  // 2. Offline
+  // 2. Google Chrome Offline / Backend Down Screen
   if (isOffline) {
     return (
-      <div className="state-screen">
-        <div className="state-card">
-          <div className="state-icon orange">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div className="chrome-error-screen">
+        <div className="chrome-error-card">
+          <div className="chrome-error-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="1" y1="1" x2="23" y2="23"/>
               <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
               <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
@@ -124,26 +124,21 @@ export function PageViewport({
               <line x1="12" y1="20" x2="12.01" y2="20"/>
             </svg>
           </div>
-          <div className="state-eyebrow">Connection Notice</div>
-          <h2 className="state-title">Backend API is Offline</h2>
-          <p className="state-body">
-            Could not reach the NestJS API at{' '}
-            <code style={{ background: 'var(--paper)', padding: '1px 6px', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-              http://localhost:3001/api
-            </code>
-            . Please start the backend server to browse the small web.
+          <h2 className="chrome-error-title">No internet / Backend is offline</h2>
+          <p className="chrome-error-desc">
+            Could not connect to the Small Web API server at <code>http://localhost:3001/api</code>.
+            Check your terminal to make sure the NestJS backend is running.
           </p>
-          <div className="state-code">
-            <strong>Start backend in a new terminal:</strong>
-            <code>cd backend && pnpm run start:dev</code>
+          <div style={{ background: '#f8f9fa', border: '1px solid #dadce0', borderRadius: 8, padding: 12, fontSize: 12, fontFamily: 'monospace', marginBottom: 20 }}>
+            cd backend &amp;&amp; pnpm run start:dev
           </div>
-          <div className="state-actions">
-            <button className="btn-primary" onClick={onRefresh}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="chrome-error-actions">
+            <button className="google-btn-primary" onClick={onRefresh}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="23 4 23 10 17 10"/>
                 <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
               </svg>
-              Retry connection
+              Try again
             </button>
           </div>
         </div>
@@ -151,38 +146,32 @@ export function PageViewport({
     );
   }
 
-  // 3. 404 / Nowhere
+  // 3. Google Chrome 404 Nowhere Screen ("Site can't be reached")
   if (isNotFound || !site) {
     return (
-      <div className="state-screen">
-        <div className="state-card">
-          <div className="state-icon red">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="12" y1="11" x2="12" y2="17"/>
-              <line x1="9" y1="11" x2="15" y2="11"/>
+      <div className="chrome-error-screen">
+        <div className="chrome-error-card">
+          <div className="chrome-error-icon alert">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <div className="state-eyebrow">Error 404 · Nowhere</div>
-          <h2 className="state-title">No site lives at this address</h2>
-          {address && (
-            <div className="state-addr">{address}</div>
-          )}
-          <p className="state-body">
-            You followed a link or typed an address that has never existed, or may have dissolved into the ether.
+          <h2 className="chrome-error-title">This site can’t be reached</h2>
+          {address && <div className="chrome-error-address">{address}</div>}
+          <p className="chrome-error-desc">
+            The Small Web server found no page registered at <strong>{address}</strong>.
+            You can be the first to publish a site at this address right now!
           </p>
-          <div className="state-actions">
-            <button className="btn-primary" onClick={() => onOpenPublish(address)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+          <div className="chrome-error-actions">
+            <button className="google-btn-primary" onClick={() => onOpenPublish(address)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              Publish here
+              Publish site here
             </button>
-            <button className="btn-secondary" onClick={onGoBack}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="15 18 9 12 15 6"/>
-              </svg>
+            <button className="google-btn-secondary" onClick={onGoBack}>
               Go back
             </button>
           </div>
@@ -191,9 +180,9 @@ export function PageViewport({
     );
   }
 
-  // 4. Sandboxed HTML content
+  // 4. Sandboxed iframe
   return (
-    <div className="iframe-container">
+    <div className="chrome-viewport">
       <iframe
         ref={iframeRef}
         key={address}
@@ -201,7 +190,7 @@ export function PageViewport({
         title={site.title}
         sandbox="allow-scripts"
         onLoad={handleIframeLoad}
-        className="browser-iframe"
+        className="chrome-iframe"
       />
     </div>
   );

@@ -19,15 +19,15 @@ const DEFAULT_HTML = `<!DOCTYPE html>
 <meta charset="utf-8">
 <title>My First Site</title>
 <style>
-  body { font-family: 'Georgia', serif; background: #fafafa; color: #111; max-width: 640px; margin: 40px auto; padding: 20px; line-height: 1.7; }
-  h1 { font-size: 26px; color: #16212C; border-bottom: 2px solid #E08A34; padding-bottom: 10px; margin-bottom: 20px; }
-  p { margin-bottom: 14px; }
-  a { color: #2E7BD6; }
-  a:hover { text-decoration: none; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #ffffff; color: #202124; max-width: 680px; margin: 40px auto; padding: 24px; line-height: 1.6; }
+  h1 { font-size: 26px; color: #1a73e8; border-bottom: 2px solid #e8eaed; padding-bottom: 10px; margin-bottom: 16px; font-weight: 500; }
+  p { margin-bottom: 14px; font-size: 15px; color: #3c4043; }
+  a { color: #1a73e8; text-decoration: none; }
+  a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
-  <h1>Hello, Small Web</h1>
+  <h1>Welcome to my Small Web site</h1>
   <p>This is a new page published directly to the database.</p>
   <p>You can link to other sites like <a href="tidepool.zz">The Intertidal Archive</a> or <a href="atlas.void">The Unmapped Constellations</a>.</p>
 </body>
@@ -63,7 +63,7 @@ export function PublishModal({
     e.preventDefault();
     setErrorMsg('');
     const cleanAddress = address.toLowerCase().trim();
-    if (!cleanAddress) { setErrorMsg('Please specify an address.'); return; }
+    if (!cleanAddress) { setErrorMsg('Please enter an address.'); return; }
     if (!title.trim()) { setErrorMsg('Please enter a site title.'); return; }
     if (!htmlContent.trim()) { setErrorMsg('HTML content cannot be empty.'); return; }
 
@@ -92,97 +92,118 @@ export function PublishModal({
       style={{ alignItems: 'center', paddingTop: 0 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="publish-modal">
+      <div className="google-dialog" style={{ maxWidth: 740, height: '82vh' }}>
         {/* Header */}
-        <div className="modal-header">
-          <div>
-            <div className="modal-title">Publish to the Small Web</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-faint)', marginTop: 2 }}>
-              An address and a single page of HTML written by you.
-            </div>
+        <div className="google-dialog-header">
+          <div className="google-dialog-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" strokeWidth="2.2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Publish to Small Web
           </div>
           <button
             onClick={onClose}
-            style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 7, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--ink-soft)' }}
+            style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5f6368' }}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
+            ✕
           </button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-          {/* Fields */}
-          <div className="modal-body" style={{ maxHeight: 180, overflowY: 'auto' }}>
+          {/* Metadata Fields */}
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #dadce0', background: '#ffffff', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             {errorMsg && (
-              <div className="error-banner">⚠ {errorMsg}</div>
+              <div style={{ gridColumn: 'span 3', padding: '8px 12px', background: '#fce8e6', color: '#c5221f', borderRadius: 8, fontSize: 12 }}>
+                {errorMsg}
+              </div>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Address</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="e.g. coral.zz"
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Site Title</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. The Coral Garden"
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Author</label>
-                <select
-                  className="form-input"
-                  value={authorHandle}
-                  onChange={(e) => setAuthorHandle(e.target.value)}
-                >
-                  {users.map((u) => (
-                    <option key={u.handle} value={u.handle}>{u.name} (@{u.handle})</option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#5f6368', marginBottom: 4, textTransform: 'uppercase' }}>
+                Address (Domain)
+              </label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="e.g. coral.zz"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #dadce0', fontSize: 13, background: '#f8f9fa', outline: 'none' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#5f6368', marginBottom: 4, textTransform: 'uppercase' }}>
+                Site Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. The Coral Garden"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #dadce0', fontSize: 13, background: '#f8f9fa', outline: 'none' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#5f6368', marginBottom: 4, textTransform: 'uppercase' }}>
+                Author
+              </label>
+              <select
+                value={authorHandle}
+                onChange={(e) => setAuthorHandle(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #dadce0', fontSize: 13, background: '#f8f9fa', outline: 'none' }}
+              >
+                {users.map((u) => (
+                  <option key={u.handle} value={u.handle}>{u.name} (@{u.handle})</option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="modal-tabs">
+          {/* Mode Tabs */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #dadce0', background: '#f8f9fa', padding: '0 16px' }}>
             <button
               type="button"
-              className={`modal-tab${viewTab === 'edit' ? ' active' : ''}`}
               onClick={() => setViewTab('edit')}
+              style={{
+                padding: '10px 18px',
+                fontSize: 13,
+                fontWeight: 500,
+                color: viewTab === 'edit' ? '#1a73e8' : '#5f6368',
+                borderBottom: viewTab === 'edit' ? '2px solid #1a73e8' : '2px solid transparent',
+                background: 'transparent',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                cursor: 'pointer',
+              }}
             >
-              ◇ HTML Source
+              HTML Code
             </button>
             <button
               type="button"
-              className={`modal-tab${viewTab === 'preview' ? ' active' : ''}`}
               onClick={() => setViewTab('preview')}
+              style={{
+                padding: '10px 18px',
+                fontSize: 13,
+                fontWeight: 500,
+                color: viewTab === 'preview' ? '#1a73e8' : '#5f6368',
+                borderBottom: viewTab === 'preview' ? '2px solid #1a73e8' : '2px solid transparent',
+                background: 'transparent',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                cursor: 'pointer',
+              }}
             >
-              ◈ Live Preview
+              Live Preview
             </button>
-            <span style={{ marginLeft: 'auto', padding: '10px 16px', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-faint)', alignSelf: 'center' }}>
-              HTML isolated in sandbox
-            </span>
           </div>
 
-          {/* Editor / Preview */}
-          <div style={{ flex: 1, minHeight: 280, background: '#fff', overflow: 'hidden', position: 'relative' }}>
+          {/* Editor / Preview Area */}
+          <div style={{ flex: 1, minHeight: 0, position: 'relative', background: '#ffffff' }}>
             {viewTab === 'edit' ? (
               <textarea
-                className="form-textarea"
-                style={{ width: '100%', height: '100%', borderRadius: 0, border: 'none', resize: 'none', minHeight: 'unset' }}
                 value={htmlContent}
                 onChange={(e) => setHtmlContent(e.target.value)}
-                placeholder="<html>...</html>"
+                style={{ width: '100%', height: '100%', padding: 16, border: 'none', outline: 'none', fontFamily: 'monospace', fontSize: 12, resize: 'none' }}
                 spellCheck={false}
               />
             ) : (
@@ -196,27 +217,20 @@ export function PublishModal({
           </div>
 
           {/* Footer */}
-          <div className="modal-footer">
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-faint)', marginRight: 'auto' }}>
-              Publishing to: <strong style={{ color: 'var(--ink)' }}>{address || '…'}</strong>
-            </span>
-            <button type="button" className="btn-secondary" onClick={onClose}>
+          <div style={{ padding: '12px 20px', borderTop: '1px solid #dadce0', background: '#f8f9fa', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{ padding: '8px 18px', borderRadius: 20, border: '1px solid #dadce0', background: '#ffffff', color: '#5f6368', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+            >
               Cancel
             </button>
-            <button type="submit" className="btn-primary" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
-                  Publishing…
-                </>
-              ) : (
-                <>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                  </svg>
-                  Publish Site
-                </>
-              )}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="google-btn-primary"
+            >
+              {isSubmitting ? 'Publishing...' : 'Publish'}
             </button>
           </div>
         </form>
